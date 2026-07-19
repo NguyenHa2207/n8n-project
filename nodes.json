@@ -1,0 +1,381 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e641b970-edb8-4758-a803-43be2388ed27",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Viết bài Facebook tiếng Anh.\n\nChủ đề:\n{{$json.topic}}\n\nYêu cầu:\n- fact khoa học đã xác nhận.\n- chỉ 250-300 chữ.\n- có tiêu đề.\n- xuống dòng.\n- 1 emoji tối đa.\n- kết thúc bằng câu hỏi.\n\nChỉ xuất ra bài viết.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        752,
+        96
+      ],
+      "id": "8b329076-9a49-4035-bfee-bdb3bd4f2d04",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        752,
+        320
+      ],
+      "id": "d729fcc8-8230-408e-b56a-53708726f1c7",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "eR8nsQHp5ALrTRuk",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e410fb30-ec54-4ebf-af9b-d7edaac042b6",
+              "name": "image_url",
+              "value": "={{ $json.collection.items[0].links[0].href }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1312,
+        96
+      ],
+      "id": "1a01cf16-55ee-4439-984b-d4ced9d25421",
+      "name": "Chuyển URL ảnh sang href"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v25.0/me/photos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "caption",
+              "value": "={{ $('AI Agent').item.json.output }}"
+            },
+            {
+              "name": "url",
+              "value": "={{ $json.image_url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1520,
+        -64
+      ],
+      "id": "153092b5-93f3-4c2c-82b7-3ef6deef654d",
+      "name": "Request đăng post qua Facebook",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "ERuCkI3yPL7TPdEB",
+          "name": "Facebook Graph account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1vOTOn5sJmyq_07F5yrTz5xjG-WMvLWjsx_3W_YuFplY",
+          "mode": "list",
+          "cachedResultName": "Facebook post logs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vOTOn5sJmyq_07F5yrTz5xjG-WMvLWjsx_3W_YuFplY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Trang tính1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vOTOn5sJmyq_07F5yrTz5xjG-WMvLWjsx_3W_YuFplY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic": "={{ $('Chọn 1 trong các topic').item.json.topic }}",
+            "Ngày đăng": "={{ $now.toFormat('dd/MM/yyyy HH:mm') }} (UTC+7)",
+            "Link bài viết": "=https://facebook.com/{{ $('Request đăng post qua Facebook').item.json.id }}",
+            "Link ảnh": "={{ $('Chuyển URL ảnh sang href').item.json.image_url }}",
+            "Caption": "={{ $('AI Agent').item.json.output.split('\\n')[0] }}",
+            "STT": "==ROW()-1"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "STT",
+              "displayName": "STT",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ngày đăng",
+              "displayName": "Ngày đăng",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link bài viết",
+              "displayName": "Link bài viết",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link ảnh",
+              "displayName": "Link ảnh",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1728,
+        -64
+      ],
+      "id": "2cc46796-8e3f-48ff-b1d2-a83ae7187309",
+      "name": "Chuyển data vào sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VtVyiwETfL07mUaI",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5bae90f0-470b-4a12-83d7-beefa6a32709",
+              "name": "=topic",
+              "value": "={{[\n\"Black Holes\",\n\"Neutron Stars\",\n\"Dark Matter\",\n\"Galaxy\",\n\"Exoplanets\",\n\"Supernova\",\n\"Milky Way\"\n]}}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "57432bcb-2cad-4560-8b24-3423b94f4b9b",
+      "name": "Các topic bài viết"
+    },
+    {
+      "parameters": {
+        "jsCode": "const topics = $json.topic;\n\nreturn [{\n topic: topics[Math.floor(Math.random()*topics.length)]\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "a2faa988-5235-4966-932b-1750505a9036",
+      "name": "Chọn 1 trong các topic"
+    },
+    {
+      "parameters": {
+        "url": "https://images-api.nasa.gov/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $('Chọn 1 trong các topic').item.json.topic }}"
+            },
+            {
+              "name": "media_type",
+              "value": "image"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1104,
+        96
+      ],
+      "id": "24b9653e-8ab7-46d9-bf0c-4f73a44bd5eb",
+      "name": "Lấy ảnh từ Nasa dựa theo bài viết"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Các topic bài viết",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Lấy ảnh từ Nasa dựa theo bài viết",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chuyển URL ảnh sang href": {
+      "main": [
+        [
+          {
+            "node": "Request đăng post qua Facebook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request đăng post qua Facebook": {
+      "main": [
+        [
+          {
+            "node": "Chuyển data vào sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Các topic bài viết": {
+      "main": [
+        [
+          {
+            "node": "Chọn 1 trong các topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chọn 1 trong các topic": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lấy ảnh từ Nasa dựa theo bài viết": {
+      "main": [
+        [
+          {
+            "node": "Chuyển URL ảnh sang href",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "506fc5e9fd584e129f71ed64a720999a64405b54ad5c4e2b95362b8e0c73f645"
+  }
+}
