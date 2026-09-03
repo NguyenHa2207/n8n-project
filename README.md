@@ -1,5 +1,6 @@
 # n8n-project
 Tự động đăng bài facebook page qua n8n.
+Link page Facebook: https://www.facebook.com/profile.php?id=61591289903286
 <br/>
 - File nodes.json là các node được dùng trong project.
 
